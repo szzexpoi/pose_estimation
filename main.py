@@ -175,6 +175,7 @@ def eval():
 
     # initialize model
     model = PoseNet(args.num_cluster)
+    model.load_state_dict(torch.load(args.weights))
     model = model.cuda()
     model.eval()
 
