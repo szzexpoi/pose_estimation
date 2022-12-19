@@ -62,18 +62,18 @@ class LSP_joint_generator(data.Dataset):
 		self.num_cluster = num_cluster
 		self.rescaler = transforms.Resize((36, 36))
 
-		anno_file = loadmat(os.path.join(anno_dir, 
+		anno_file = loadmat(os.path.join(anno_dir,
 					'joints_scaled_cropped.mat'))['joints_scaled_cropped']
 		self.excluded_data = json.load(open(os.path.join(
 									anno_dir, 'excluded_human_data.json')))
 		self.cluster_assignment = json.load(open(os.path.join(
 									anno_dir, 'cluster_assignment.json')))
 		self.image_size = json.load(open(os.path.join(
-									anno_dir, 'image_size.json')))		
+									anno_dir, 'image_size.json')))
 		self.init_data(anno_file)
 
 	def init_data(self, anno_file):
-		# the data is splited by half for training and evaluation 
+		# the data is splited by half for training and evaluation
 		id_pool = range(1000) if self.split == 'train' else range(1000, 2000)
 
 		# iterate through all selected images and their corresponding joints
@@ -86,11 +86,11 @@ class LSP_joint_generator(data.Dataset):
 
 			# only considering 6 pairs of joints
 			for joint_id in range(12):
-				x, y = anno_file[0, joint_id, img_id], anno_file[0, joint_id, img_id]
+				x, y = anno_file[0, joint_id, img_id], anno_file[1, joint_id, img_id]
 				if x > w or y > h:
 					continue
 				self.annotation.append({'image': img_id+1,
-										'joint': joint_id, 
+										'joint': joint_id,
 										'location':[int(y)-1, int(x)-1] # note that the order is reversed
 										})
 
@@ -129,7 +129,7 @@ class LSP_joint_generator(data.Dataset):
 		joint_loc = data['location']
 
 		# loading image
-		img =  Image.open(os.path.join(self.img_dir, 
+		img =  Image.open(os.path.join(self.img_dir,
 						'im'+str(img_id).zfill(4))+'_scaled_cropped.jpg'
 						).convert('RGB')
 		img = transforms.ToTensor()(img)
@@ -138,14 +138,14 @@ class LSP_joint_generator(data.Dataset):
 		joint_img = self.crop_joint(img, joint_loc)
 
 		# category of joint
-		joint_label = torch.zeros(6,)		
+		joint_label = torch.zeros(6,)
 		joint_label[joint_encoding[id2joint[joint_id]]] = 1
-		
+
 		# a multi-label mask encoding relationship (6 joints x 5 other joints x number of clusters)
 		relation_mask = torch.zeros(6*5*self.num_cluster,)
 		cluster_data = self.cluster_assignment[str(img_id)][str(joint_id)]
-		
-		# residual for joint category 
+
+		# residual for joint category
 		base_residual = joint_encoding[id2joint[joint_id]]*5*self.num_cluster
 		# residual for one joint to the others
 		pair_residual = 0
@@ -163,9 +163,3 @@ class LSP_joint_generator(data.Dataset):
 
 	def __len__(self,):
 		return len(self.annotation)
-
-
-
-
-
-
